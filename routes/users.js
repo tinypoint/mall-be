@@ -28,9 +28,10 @@ router.post('/login', function (req, res) {
                 result: ''
             })
         } else if (doc) {
+            // cookie 留存 24小时
             res.cookie("userId", doc.userId, {
                 path: '/',
-                maxAge: 1000 * 60 * 60
+                maxAge: 1000 * 60 * 60 * 24
             });
             res.json({
                 status: '0',
@@ -86,7 +87,7 @@ router.post('/register', function (req, res) {
                 // 可以注册
                 User.insertMany({
                     userName: userName,
-                    name: '皮皮虾',
+                    name: `新用户${userId.slice(userId.length - 6)}`,
                     avatar: 'http://osc9sqdxe.bkt.clouddn.com/default-user-avatar.png',
                     userId: userId,
                     userPwd: userPwd,
@@ -122,7 +123,8 @@ router.post('/upload', function (req, res, next) {
                 if (err1) {
                     res.json({
                         status: '1',
-                        msg: '上传失败'
+                        msg: '上传失败',
+                        result: ''
                     });
                 } else {
                     res.json({
