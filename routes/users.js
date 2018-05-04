@@ -1,5 +1,6 @@
 var express = require('express')
 var router = express.Router()
+const https = require('https')
 require('./../util/dateFormat')
 var User = require('../models/user')
 var Good = require('../models/goods')
@@ -14,6 +15,19 @@ var client = qn.create({
     bucket: bucket,
     origin: 'http://ouibvkb9c.bkt.clouddn.com'
 })
+// 阿里沙箱支付
+var path = require('path')
+var Alipay = require('alipay-node-sdk')
+var outTradeId = Date.now().toString()
+var ali = new Alipay({
+    appId: '2016091400513255',
+    notifyUrl: 'http://127.0.0.1:3333',
+    rsaPrivate: path.resolve('./rsa/private.txt'),
+    rsaPublic: path.resolve('./rsa/public.txt'),
+    sandbox: true,
+    signType: 'RSA2'
+});
+
 // 登陆接口
 router.post('/login', function (req, res) {
     var params = {
@@ -546,7 +560,7 @@ router.post('/payMent', function (req, res) {
         addressId = req.body.addressId,
         orderTotal = req.body.orderTotal,// 商品总价格
         productId = req.body.productId || '',
-        productNum = req.body.productNum || 0;
+        productNum = req.body.productNum || 0;     
     if (userId) {
         if (addressId && orderTotal) {
             User.findOne({
@@ -636,6 +650,28 @@ router.post('/payMent', function (req, res) {
                                 goodsList.push(item);
                             }
                         });
+
+                        var params = ali.pagePay({
+                            subject: '订单' + orderId,
+                            body: goodsList.map(item => item.productName).join(','),
+                            outTradeId: outTradeId,
+                            timeout: '1c',
+                            amount: orderTotal,
+                            goodsType: '1',
+                            goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
+                            passbackParams: {},
+                            extendParams: {},
+                            qrPayMode: 0,
+                            return_url: ''
+                        });
+                        res.json({
+                            status: "0",
+                            msg: 'sux',
+                            result: {
+                                url: 'https://openapi.alipaydev.com/gateway.do?' + params
+                            }
+                        });
+
                         cb()
                     }
                 }
@@ -655,6 +691,10 @@ router.post('/payMent', function (req, res) {
         })
     }
 
+})
+router.get('/alicheck', (req, res) => {
+    let ok = ali.signVerify(res);
+    console.log(ok)
 })
 // 查询订单
 router.post('/orderList', function (req, res) {

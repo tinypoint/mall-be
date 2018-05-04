@@ -4,7 +4,7 @@ var Alipay = require('alipay-node-sdk')
 var outTradeId = Date.now().toString()
 var ali = new Alipay({
     appId: '2016091400513255',
-    notifyUrl: 'http://39.107.236.248/goods/aliback',
+    notifyUrl: 'http://127.0.0.1:3333/users/alicheck',
     rsaPrivate: path.resolve('./rsa/private.txt'),
     rsaPublic: path.resolve('./rsa/public.txt'),
     sandbox: true,
@@ -19,7 +19,6 @@ var params = ali.pagePay({
     goodsType: '0',
     qrPayMode: 0
 });
-console.log(params);
 
 const https = require('https');
   
