@@ -17,7 +17,7 @@ const ali = new Alipay({
     signType: 'RSA2'
 });
 
-router.post('/aliback', (req, res, next) => {
+router.get('/aliback', (req, res, next) => {
     let ok = ali.signVerify(res);
     console.log('支付宝校验结果是: ' + ok);
     if (ok) {
