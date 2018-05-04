@@ -5,6 +5,33 @@ const Good        = require('../models/goods')
 const User        = require('../models/user')
 const superagent  = require('superagent')
 
+const path = require('path')
+const Alipay = require('alipay-node-sdk')
+const outTradeId = Date.now().toString()
+const ali = new Alipay({
+    appId: '2016091400513255',
+    notifyUrl: 'http://39.107.236.248/goods/aliback',
+    rsaPrivate: path.resolve(__dirname, '../rsa/private.txt'),
+    rsaPublic: path.resolve(__dirname, '../rsa/public.txt'),
+    sandbox: true,
+    signType: 'RSA2'
+});
+
+router.post('/aliback', (req, res, next) => {
+    let ok = ali.signVerify(res);
+    if (ok) {
+        res.json({
+            status: '0',
+            msg: 'success'
+        })
+    } else {
+        res.json({
+            status: '1',
+            msg: 'failed'
+        })
+    }
+})
+
 // 商品列表
 router.get('/computer', function (req, res, next) {
     let sort = req.query.sort || '';
