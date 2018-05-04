@@ -19,6 +19,7 @@ const ali = new Alipay({
 
 router.post('/aliback', (req, res, next) => {
     let ok = ali.signVerify(res);
+    console.log('支付宝校验结果是: ' + ok);
     if (ok) {
         res.json({
             status: '0',

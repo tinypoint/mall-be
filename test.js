@@ -4,7 +4,7 @@ var Alipay = require('alipay-node-sdk')
 var outTradeId = Date.now().toString()
 var ali = new Alipay({
     appId: '2016091400513255',
-    notifyUrl: 'http://39.107.236.248/',
+    notifyUrl: 'http://39.107.236.248/goods/aliback',
     rsaPrivate: path.resolve('./rsa/private.txt'),
     rsaPublic: path.resolve('./rsa/public.txt'),
     sandbox: true,
@@ -49,22 +49,3 @@ req.on('error', (e) => {
 // 写入数据到请求主体
 req.write(params);
 req.end();
-
-  const http = require('http')
-const req1 = http.request('http://127.0.0.1:3333/pay', (res) => {
-    res.setEncoding('utf8');
-    res.on('data', (chunk) => {
-        console.log(`响应主体: ${chunk}`);
-    });
-    res.on('end', () => {
-        console.log('响应中已无数据。');
-    });
-});
-
-req1.on('error', (e) => {
-    console.error(`请求遇到问题: ${e.message}`);
-});
-
-// 写入数据到请求主体
-req1.write(params);
-req1.end();
