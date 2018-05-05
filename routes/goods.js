@@ -1,37 +1,9 @@
-const express     = require('express');
-const router      = express.Router()
-const mongoose    = require('mongoose')
-const Good        = require('../models/goods')
-const User        = require('../models/user')
-const superagent  = require('superagent')
-
-const path = require('path')
-const Alipay = require('alipay-node-sdk')
-const outTradeId = Date.now().toString()
-const ali = new Alipay({
-    appId: '2016091400513255',
-    notifyUrl: 'http://39.107.236.248/goods/aliback',
-    rsaPrivate: path.resolve(__dirname, '../rsa/private.txt'),
-    rsaPublic: path.resolve(__dirname, '../rsa/public.txt'),
-    sandbox: true,
-    signType: 'RSA2'
-});
-
-router.get('/aliback', (req, res, next) => {
-    let ok = ali.signVerify(res);
-    console.log('支付宝校验结果是: ' + ok);
-    if (ok) {
-        res.json({
-            status: '0',
-            msg: 'success'
-        })
-    } else {
-        res.json({
-            status: '1',
-            msg: 'failed'
-        })
-    }
-})
+const express = require('express');
+const router = express.Router()
+const mongoose = require('mongoose')
+const Good = require('../models/goods')
+const User = require('../models/user')
+const superagent = require('superagent')
 
 // 商品列表
 router.get('/computer', function (req, res, next) {
