@@ -714,7 +714,7 @@ router.post('/aliNotice', (req, res) => {
     //     seller_id: '2088102175668192'
     // }
 
-    let isSuccess = ali.signVerify(req.body);
+    let isSuccess = ali.signVerify(JSON.stringify(req.body));
     console.log(isSuccess)
      if (isSuccess) {  
         if (tradeStatus === 'TRADE_FINISHED') {//交易状态TRADE_FINISHED的通知触发条件是商户签约的产品不支持退款功能的前提下，买家付款成功；或者，商户签约的产品支持退款功能的前提下，交易已经成功并且已经超过可退款期限。  
