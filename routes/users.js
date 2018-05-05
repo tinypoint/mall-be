@@ -18,10 +18,9 @@ var client = qn.create({
 // 阿里沙箱支付
 var path = require('path')
 var Alipay = require('alipay-node-sdk')
-var outTradeId = Date.now().toString()
 var ali = new Alipay({
     appId: '2016091400513255',
-    notifyUrl: 'http://127.0.0.1:3333',
+    notifyUrl: 'http://39.107.236.248/users/aliNotice',
     rsaPrivate: path.resolve('./rsa/private.txt'),
     rsaPublic: path.resolve('./rsa/public.txt'),
     sandbox: true,
@@ -554,13 +553,13 @@ router.post('/addressDel', function (req, res) {
     }
 
 })
-// 生成订单
-router.post('/payMent', function (req, res) {
+// 阿里支付
+router.get('/aliPay', function (req, res) {
     let userId = req.cookies.userId,
-        addressId = req.body.addressId,
-        orderTotal = req.body.orderTotal,// 商品总价格
-        productId = req.body.productId || '',
-        productNum = req.body.productNum || 0;     
+        addressId = req.query.addressId,
+        orderTotal = req.query.orderTotal,// 商品总价格
+        productId = req.query.productId || '',
+        productNum = req.query.productNum || 0; 
     if (userId) {
         if (addressId && orderTotal) {
             User.findOne({
@@ -595,41 +594,14 @@ router.post('/payMent', function (req, res) {
                         orderTotal: orderTotal,
                         addressInfo: userAddress,
                         goodsList: goodsList,
-                        orderStatus: '1',
+                        orderStatus: '0',
                         createDate: createDate
-                    };
-
-                    function cb() {
-                        userDoc.cartList = [];
-                        userDoc.orderList.push(order);
-                        userDoc.save(function (err1, doc1) {
-                            if (err1) {
-                                res.json({
-                                    status: "1",
-                                    msg: err.message,
-                                    result: ''
-                                });
-                            } else { // 保存
-                                res.json({
-                                    status: "0",
-                                    msg: '',
-                                    result: {
-                                        orderId: order.orderId,
-                                        orderTotal: order.orderTotal
-                                    }
-                                });
-                            }
-                        });
                     }
 
                     if (productId && productNum) {
                         Good.findOne({productId}, (goodsErr, goodsDoc) => {
                             if (goodsErr) {
-                                res.json({
-                                    status: '1',
-                                    msg: goodsErr.message,
-                                    result: ''
-                                })
+                                // TODO 没有这个商品，返回错误页面
                             } else {
                                 let item = {
                                     productId: goodsDoc.productId,
@@ -640,8 +612,33 @@ router.post('/payMent', function (req, res) {
                                     productPrice: goodsDoc.salePrice
                                 }
                                 goodsList.push(item)
+                                // 1为正在支付，需要接受支付宝回调，会改成2，表示成功支付，为3代表支付失败
+                                order.orderStatus = '1'
+                                userDoc.orderList.push(order);
+                                userDoc.save(function (err1, doc1) {
+                                    if (err1) {
+                                        // TODO 订单保存失败
+                                    } else { 
+                                        // TODO 订单保存成功
+                                    }
+                                });
+
+                                let params = ali.pagePay({
+                                    subject: goodsDoc.productName,
+                                    body: goodsDoc.productName,
+                                    outTradeId: orderId,
+                                    timeout: '1c',
+                                    amount: orderTotal,
+                                    goodsType: '1',
+                                    // goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
+                                    // passbackParams: {},
+                                    // extendParams: {},
+                                    qrPayMode: 1,
+                                    return_url: `http://localhost:9999/#/order/paysuccess?price='${orderTotal}&orderId=${orderId}`
+                                });
+        
+                                res.redirect('https://openapi.alipaydev.com/gateway.do?' + params)
                             }
-                            cb()
                         })
                     } else {
                         // 获取用户购物车的购买商品
@@ -650,51 +647,133 @@ router.post('/payMent', function (req, res) {
                                 goodsList.push(item);
                             }
                         });
-
+                        // 生成订单号
                         var params = ali.pagePay({
                             subject: '订单' + orderId,
                             body: goodsList.map(item => item.productName).join(','),
-                            outTradeId: outTradeId,
+                            outTradeId: orderId,
                             timeout: '1c',
                             amount: orderTotal,
                             goodsType: '1',
-                            goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
-                            passbackParams: {},
-                            extendParams: {},
-                            qrPayMode: 0,
-                            return_url: ''
+                            // goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
+                            // passbackParams: {},
+                            // extendParams: {},
+                            qrPayMode: 1,
+                            return_url: `http://localhost:9999/#/order/paysuccess?price='${orderTotal}&orderId=${orderId}`
                         });
-                        res.json({
-                            status: "0",
-                            msg: 'sux',
-                            result: {
-                                url: 'https://openapi.alipaydev.com/gateway.do?' + params
+                        // 同步数据库
+                        userDoc.cartList = [];
+                        order.orderStatus = '1'
+                        userDoc.orderList.push(order);
+                        userDoc.save(function (err1, doc1) {
+                            if (err1) {
+                                // TODO 订单保存失败
+                            } else { 
+                                // TODO 订单保存成功
                             }
                         });
 
-                        cb()
+                        res.redirect('https://openapi.alipaydev.com/gateway.do?' + params)
                     }
                 }
             })
         } else {
-            res.json({
-                status: '1',
-                msg: '缺少必须参数',
-                result: ''
-            })
+            // TODO 缺少必填字段
         }
     } else {
+        // TODO 用户未登录
+    }
+})
+// TODO 接受阿里的回调
+router.post('/aliNotice', (req, res) => {
+    let ok = ali.signVerify(res);
+    console.log(res.body)
+    console.log(ok)
+
+})
+
+router.get('/aliQuery', (req, res) => {
+    let userId = req.cookies.userId,
+    out_trade_no = req.query.out_trade_no;
+    
+    if (userId) {
+        User.findOne({
+            userId
+        },  (err, userDoc) => {
+            if (err) {
+                res.json({
+                    status: '1',
+                    msg: err.message,
+                    result: ''
+                })
+            } else {
+                var hasOrder = false;
+                userDoc.orderList.forEach(item => {
+                    if (item.orderId == out_trade_no) {
+                        hasOrder = true
+                    }
+                })
+                if (hasOrder) {
+                    var params = ali.query({
+                        outTradeId: out_trade_no
+                    }).then(function (ret) {
+                        var ok = ali.signVerify(ret.json());
+                        if (ok) {
+                            let parsedBody = JSON.parse(ret.body)
+                            if (parsedBody.alipay_trade_query_response.code === 10000 ) {
+                                // userDoc.orderList.forEach(order => {
+                                //     if (order.orderId == out_trade_no) {
+                                //         order.orderStatus = '2'
+                                //     }
+                                // })
+                                res.json({
+                                    status: '0',
+                                    message: parsedBody.alipay_trade_query_response.msg,
+                                    result: parsedBody.alipay_trade_query_response.trade_status
+                                })
+                            } else {
+                                userDoc.orderList.forEach(order => {
+                                    if (order.orderId == out_trade_no) {
+                                        order.orderStatus = '3'
+                                    }
+                                })
+                                res.json({
+                                    status: parsedBody.alipay_trade_query_response.code,
+                                    message: parsedBody.alipay_trade_query_response.msg,
+                                    result: parsedBody.alipay_trade_query_response.trade_status
+                                })
+                            } 
+                            // userDoc.save((err1, doc1) => {
+                            //     if (err1) {
+                                    
+                            //     } else {
+                                    
+                            //     }
+                            // })
+                        } else {
+                            res.json({
+                                status: '1',
+                                message: '支付宝校验失败',
+                                result: ''
+                            })
+                        }
+                    });
+                } else {
+                    res.json({
+                        status: '1',
+                        message: '查无此单',
+                        result: ''
+                    })
+                }
+            }
+        })
+    } else {
         res.json({
-            status: '1',
-            msg: '未登录',
+            status: '0',
+            msg: '用户未登录',
             result: ''
         })
     }
-
-})
-router.get('/alicheck', (req, res) => {
-    let ok = ali.signVerify(res);
-    console.log(ok)
 })
 // 查询订单
 router.post('/orderList', function (req, res) {
