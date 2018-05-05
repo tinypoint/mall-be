@@ -566,11 +566,7 @@ router.get('/aliPay', function (req, res) {
                 userId
             }, (err, userDoc) => {
                 if (err) {
-                    res.json({
-                        status: '1',
-                        msg: err.message,
-                        result: ''
-                    })
+                    // TODO 查询用户失败
                 } else {
                     let userAddress = {},
                         goodsList = [];
@@ -644,13 +640,27 @@ router.get('/aliPay', function (req, res) {
                         })
                     } else {
                         // 获取用户购物车的购买商品
+                        let newCartList = []
                         cartList.forEach((item) => {
                             if (item.checked == '1') {
                                 goodsList.push(item);
+                            } else {
+                                newCartList.push(item)
+                            }
+                        });
+                        // 同步数据库
+                        userDoc.cartList = newCartList;
+                        order.orderStatus = '1'
+                        userDoc.orderList.push(order);
+                        userDoc.save(function (err1, doc1) {
+                            if (err1) {
+                                // TODO 订单保存失败
+                            } else { 
+                                // TODO 订单保存成功
                             }
                         });
                         // 生成订单号
-                        var params = ali.pagePay({
+                        let params = ali.pagePay({
                             subject: '订单' + orderId,
                             body: goodsList.map(item => item.productName).join(','),
                             outTradeId: orderId,
@@ -664,17 +674,6 @@ router.get('/aliPay', function (req, res) {
                             // extendParams: {},
                             qrPayMode: 1,
                             return_url: `http://39.107.236.248/#/order/paysuccess?price=${orderTotal}&orderId=${orderId}`
-                        });
-                        // 同步数据库
-                        userDoc.cartList = [];
-                        order.orderStatus = '1'
-                        userDoc.orderList.push(order);
-                        userDoc.save(function (err1, doc1) {
-                            if (err1) {
-                                // TODO 订单保存失败
-                            } else { 
-                                // TODO 订单保存成功
-                            }
                         });
 
                         res.redirect('https://openapi.alipaydev.com/gateway.do?' + params)
