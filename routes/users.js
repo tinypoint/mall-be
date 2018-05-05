@@ -717,9 +717,10 @@ router.post('/aliNotice', (req, res) => {
     //     sign_type: 'RSA2',
     //     seller_id: '2088102175668192'
     // }
-    let passback_params = JSON.parse(req.body.passback_params);
-    let userId = papassback_params.userId;
-    console.log(userId)
+    console.log(req.body)
+    // let passback_params = JSON.parse(req.body.passback_params);
+    // let userId = papassback_params.userId;
+    // console.log(userId)
     let isSuccess = ali.signVerify(req.body);
      if (isSuccess) {
         // TODO 更新用户的订单状态 
