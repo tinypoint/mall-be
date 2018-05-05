@@ -690,36 +690,9 @@ router.get('/aliPay', function (req, res) {
 })
 // TODO 接受阿里的回调
 router.post('/aliNotice', (req, res) => {    
-    // return demo
-    // var a = { 
-    //     gmt_create: '2018-05-05 17:00:55',
-    //     charset: 'utf-8',
-    //     gmt_payment: '2018-05-05 17:01:01',
-    //     notify_time: '2018-05-05 17:01:02',
-    //     subject: '订单6182201805051700513',
-    //     sign: 'kpbjDx4hLCKuaZU+B9UAqznE87p2SrEpjJ5ys9ji1FS4CU0fNFyvgMt4WYmEx3Va8MX8f2upMbRsf/GVZQiaI2wVDQgWR0FG5LVKSjmWLGXy3JjdzMyH+JO3+LfPN7s4BEwwI34hSClv6nlTN5dvep/jLxlF8ZlnQJ6JQ8OGvW83oNdyTQtOrwIE3G7UpcEtRXo/Bkc8r9ZeUksXXDzraIbJuZWUqOiUG69JX0TcESBbhDwrsA++DJxcRT5ADu9RAxBNB+Zhfk3Yf52155VGlT3/e+LiHC7AzKM2a3XBQarUAcO42UNjy/Ja7qaxpINOfRVCccZtQatprbyEywaC2A==',
-    //     buyer_id: '2088102175824701',
-    //     body: 'Smartisan 明信片',
-    //     invoice_amount: '9.90',
-    //     version: '1.0',
-    //     notify_id: '75041a36663b02c7cf81c49d117f893lei',
-    //     fund_bill_list: '[{"amount":"9.90","fundChannel":"ALIPAYACCOUNT"}]',
-    //     notify_type: 'trade_status_sync',
-    //     out_trade_no: '6182201805051700513',
-    //     total_amount: '9.90',
-    //     trade_status: 'TRADE_SUCCESS',
-    //     trade_no: '2018050521001004700201293148',
-    //     auth_app_id: '2016091400513255',
-    //     receipt_amount: '9.90',
-    //     point_amount: '0.00',
-    //     app_id: '2016091400513255',
-    //     buyer_pay_amount: '9.90',
-    //     sign_type: 'RSA2',
-    //     seller_id: '2088102175668192'
-    // }
     let passback_params = JSON.parse(req.body.passback_params);
-    let userId = passback_params.userId;
     let out_trade_no = req.body.out_trade_no;
+    let userId = passback_params.userId;
     let isSuccess = ali.signVerify(req.body);
      if (isSuccess) {
         // TODO 更新用户的订单状态 
@@ -730,29 +703,49 @@ router.post('/aliNotice', (req, res) => {
                 if (err) {
                     // TODO 
                 } else {
-                    var orderList = userDoc.orderList;
-                    orderList.forEach(item => {
-                        if (item.orderId == out_trade_no) {
-                            console.log('changing')
-                            item.orderStatus = '2'
+                    userDoc.orderList = userDoc.orderList.map(order => {
+                        if (order.orderId == out_trade_no) {
+                            return Object.assign({}, order, {
+                                orderStatus: '2'
+                            })
+                        } else {
+                            return order;
                         }
                     })
 
-                    userDoc.orderList = [{a: 1}]
-
-                    userDoc.save((err) => {
-                        if (err) {
-                            console.log('err')
-                        } else {
-                            console.log('done')
-                        }
+                    userDoc.save().then(() => {
+                        // TODO 成功存储
                     })
                 }
             })
         }
 
         res.send('success');
-    } else {  
+    } else {
+        if (userId) {
+            User.findOne({
+                userId
+            }, (err, userDoc) => {
+                if (err) {
+                    // TODO 
+                } else {
+                    userDoc.orderList = userDoc.orderList.map(order => {
+                        if (order.orderId == out_trade_no) {
+                            return Object.assign({}, order, {
+                                orderStatus: '3'
+                            })
+                        } else {
+                            return order;
+                        }
+                    })
+
+                    userDoc.save().then(() => {
+                        // TODO 成功存储
+                    })
+                }
+            })
+        }
+
         res.send('fail');  
     }
 })
