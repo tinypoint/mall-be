@@ -713,19 +713,10 @@ router.post('/aliNotice', (req, res) => {
     //     sign_type: 'RSA2',
     //     seller_id: '2088102175668192'
     // }
-    console.log(typeof req.body)
+    console.log(req.body)
     let isSuccess = ali.signVerify(req.body);
     console.log(isSuccess)
      if (isSuccess) {  
-        if (tradeStatus === 'TRADE_FINISHED') {//交易状态TRADE_FINISHED的通知触发条件是商户签约的产品不支持退款功能的前提下，买家付款成功；或者，商户签约的产品支持退款功能的前提下，交易已经成功并且已经超过可退款期限。  
-  
-        } else if (tradeStatus === 'TRADE_SUCCESS') {//状态TRADE_SUCCESS的通知触发条件是商户签约的产品支持退款功能的前提下，买家付款成功  
-  
-        } else if (tradeStatus === 'WAIT_BUYER_PAY') {  
-  
-        } else if (tradeStatus === 'TRADE_CLOSED') {  
-  
-        }  
         res.send('success');  
     } else {  
         res.send('fail');  
