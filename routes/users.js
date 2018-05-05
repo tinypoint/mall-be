@@ -718,7 +718,8 @@ router.post('/aliNotice', (req, res) => {
     //     seller_id: '2088102175668192'
     // }
     console.log(req.body)
-    // let passback_params = JSON.parse(req.body.passback_params);
+    let passback_params = JSON.parse(req.body.passback_params);
+    console.log(passback_params)
     // let userId = papassback_params.userId;
     // console.log(userId)
     let isSuccess = ali.signVerify(req.body);
