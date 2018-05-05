@@ -719,11 +719,37 @@ router.post('/aliNotice', (req, res) => {
     // }
     let passback_params = JSON.parse(req.body.passback_params);
     let userId = passback_params.userId;
-    console.log(userId)
+    let out_trade_no = req.body.out_trade_no;
     let isSuccess = ali.signVerify(req.body);
      if (isSuccess) {
         // TODO 更新用户的订单状态 
-        res.send('success');  
+        if (userId) {
+            User.findOne({
+                userId
+            }, (err, userDoc) => {
+                if (err) {
+
+                } else {
+                    userDoc.orderList.forEach(item => {
+                        console.log(item.orderId)
+                        console.log(out_trade_no)
+                        if (item.orderId == out_trade_no) {
+                            item.orderStatus = 2
+                        }
+                    })
+
+                    userDoc.save((err) => {
+                        if (err) {
+
+                        } else {
+
+                        }
+                    })
+                }
+            })
+        }
+
+        res.send('success');
     } else {  
         res.send('fail');  
     }
