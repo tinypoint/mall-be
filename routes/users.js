@@ -730,12 +730,18 @@ router.post('/aliNotice', (req, res) => {
                 if (err) {
                     // TODO 
                 } else {
-                    userDoc.orderList.forEach(item => {
+                    var orderList = userDoc.orderList;
+                    console.log(orderList)
+                    orderList.forEach(item => {
                         if (item.orderId == out_trade_no) {
                             console.log('changing')
                             item.orderStatus = '2'
                         }
                     })
+
+                    console.log(orderList)
+
+                    userDoc.orderList = orderList
 
                     userDoc.save((err) => {
                         console.log('done')
