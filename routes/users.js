@@ -631,7 +631,9 @@ router.get('/aliPay', function (req, res) {
                                     amount: orderTotal,
                                     goodsType: '1',
                                     // goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
-                                    // passbackParams: {},
+                                    passbackParams: JSON.stringify({
+                                        userId
+                                    }),
                                     // extendParams: {},
                                     qrPayMode: 1,
                                     return_url: `http://39.107.236.248/#/order/paysuccess?price=${orderTotal}&orderId=${orderId}`
@@ -656,7 +658,9 @@ router.get('/aliPay', function (req, res) {
                             amount: orderTotal,
                             goodsType: '1',
                             // goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
-                            // passbackParams: {},
+                            passbackParams: JSON.stringify({
+                                userId
+                            }),
                             // extendParams: {},
                             qrPayMode: 1,
                             return_url: `http://39.107.236.248/#/order/paysuccess?price=${orderTotal}&orderId=${orderId}`
@@ -685,7 +689,7 @@ router.get('/aliPay', function (req, res) {
     }
 })
 // TODO 接受阿里的回调
-router.post('/aliNotice', (req, res) => {
+router.post('/aliNotice', (req, res) => {    
     // return demo
     // var a = { 
     //     gmt_create: '2018-05-05 17:00:55',
@@ -713,10 +717,12 @@ router.post('/aliNotice', (req, res) => {
     //     sign_type: 'RSA2',
     //     seller_id: '2088102175668192'
     // }
-    console.log(req.body)
+    let passback_params = JSON.parse(req.body.passback_params);
+    let userId = papassback_params.userId;
+    console.log(userId)
     let isSuccess = ali.signVerify(req.body);
-    console.log(isSuccess)
-     if (isSuccess) {  
+     if (isSuccess) {
+        // TODO 更新用户的订单状态 
         res.send('success');  
     } else {  
         res.send('fail');  
