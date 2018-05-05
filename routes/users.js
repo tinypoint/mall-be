@@ -686,10 +686,11 @@ router.get('/aliPay', function (req, res) {
 })
 // TODO 接受阿里的回调
 router.post('/aliNotice', (req, res) => {
-    console.log(req.body)
-    // let ok = ali.signVerify(JSON.stringify(res.body));
-    // console.log(res.body)
-    // console.log(ok)
+    for (var key in req.body) {
+        console.log(req.body)
+    }
+     // let ok = ali.signVerify(JSON.stringify(res.body));
+    res.send('success'); 
 
 })
 
