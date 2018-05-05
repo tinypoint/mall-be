@@ -738,7 +738,7 @@ router.post('/aliNotice', (req, res) => {
                         }
                     })
 
-                    userDoc.orderList = orderList.slice(0)
+                    userDoc.orderList = [{a: 1}]
 
                     userDoc.save((err) => {
                         if (err) {
