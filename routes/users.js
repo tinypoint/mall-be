@@ -686,7 +686,7 @@ router.get('/aliPay', function (req, res) {
 })
 // TODO 接受阿里的回调
 router.post('/aliNotice', (req, res) => {
-    console.log(res.connection.body)
+    console.log(res.connection)
     for (var key in res) {
         console.log(key)
     }
