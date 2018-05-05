@@ -733,7 +733,7 @@ router.post('/aliNotice', (req, res) => {
                     userDoc.orderList.forEach(item => {
                         if (item.orderId == out_trade_no) {
                             console.log('changing')
-                            item.orderStatus = 2
+                            item.orderStatus = '2'
                         }
                     })
 
