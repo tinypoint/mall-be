@@ -634,7 +634,7 @@ router.get('/aliPay', function (req, res) {
                                     // passbackParams: {},
                                     // extendParams: {},
                                     qrPayMode: 1,
-                                    return_url: `http://localhost:9999/#/order/paysuccess?price='${orderTotal}&orderId=${orderId}`
+                                    return_url: `http://39.107.236.248/#/order/paysuccess?price=${orderTotal}&orderId=${orderId}`
                                 });
         
                                 res.redirect('https://openapi.alipaydev.com/gateway.do?' + params)
