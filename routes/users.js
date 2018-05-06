@@ -904,4 +904,98 @@ router.post('/delOrder', function (req, res) {
     }
 })
 
+// 生成订单
+router.post('/createOrder', (req, res, err) => {
+    let userId = req.cookies.userId,
+        addressId = req.body.addressId,
+        productId = req.body.productId,
+        num = req.body.num
+
+    User.findOne({
+        userId
+    }).then(userDoc => {
+        let userAddress = {},
+            goodsList = [],
+            newCartList = [],
+            orderTotal = 0
+
+        let addressList = userDoc.addressList,
+            cartList = userDoc.cartList;
+
+        addressList.forEach(item => {
+            if (item.addressId == addressId) {
+                userAddress = item
+            }
+        })
+        
+        let platform = '618';
+        let r1 = Math.floor(Math.random() * 10);
+        let r2 = Math.floor(Math.random() * 10);
+        let sysDate = new Date().Format('yyyyMMddhhmmss');
+        let createDate = new Date().Format('yyyy-MM-dd hh:mm:ss');
+        let orderId = platform + r1 + sysDate + r2;
+        let order = {
+            orderId: orderId,
+            orderTotal: orderTotal,
+            addressInfo: userAddress,
+            goodsList: goodsList,
+            orderStatus: '0',
+            createDate: createDate
+        }
+
+        if (productId && num) {
+            return Good.findOne({productId}).then(goodDoc => {
+                let item = {
+                    productId: goodDoc.productId,
+                    productImg: goodDoc.productImageBig,
+                    productName: goodDoc.productName,
+                    checked: '1',
+                    productNum: num,
+                    productPrice: goodDoc.salePrice
+                }
+                goodsList.push(item)
+                order.orderTotal += num * goodDoc.salePrice
+                // 同步数据库
+                // 订单状态置为未支付
+                order.orderStatus = '0'
+                userDoc.orderList.push(order)
+                return userDoc.save().then(() => {
+                    return orderId
+                })
+            })
+        } else {
+            cartList.forEach((item) => {
+                if (item.checked == '1') {
+                    goodsList.push(item)
+                    order.orderTotal += item.productNum * item.productPrice
+                } else {
+                    newCartList.push(item)
+                }
+            });
+            
+            // 同步数据库
+            userDoc.cartList = newCartList;
+            // 订单状态置为未支付
+            order.orderStatus = '0'
+            userDoc.orderList.push(order)
+            return userDoc.save().then(() => {
+                return orderId
+            })
+        }
+    }).then(orderId => {
+        res.json({
+            status: 0,
+            message: 'suc',
+            result: {
+                orderId
+            }
+        })
+    }).catch(err => {
+        res.json({
+            status: 1,
+            message: 'failed',
+            result: ''
+        })
+    })
+})
 module.exports = router
