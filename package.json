@@ -9,6 +9,7 @@
   "dependencies": {
     "alipay-node-sdk": "^1.1.8",
     "async": "^2.5.0",
+    "bluebird": "^3.5.1",
     "body-parser": "~1.17.1",
     "cheerio": "^1.0.0-rc.2",
     "cookie-parser": "~1.4.3",

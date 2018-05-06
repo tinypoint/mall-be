@@ -1,6 +1,8 @@
-var express = require('express');
+var express = require('express')
 var router = express.Router();
 var mongoose = require('mongoose')
+mongoose.Promise = require('bluebird')
+
 mongoose.connect('mongodb://127.0.0.1:27017/mymall', {useMongoClient: true})
 var db = mongoose.connection
 db.once("open", function () {
