@@ -556,137 +556,46 @@ router.post('/addressDel', function (req, res) {
 // 阿里支付
 router.get('/aliPay', function (req, res) {
     let userId = req.cookies.userId,
-        addressId = req.query.addressId,
-        orderTotal = req.query.orderTotal,// 商品总价格
-        productId = req.query.productId || '',
-        productNum = req.query.productNum || 0; 
-    if (userId) {
-        if (addressId && orderTotal) {
-            User.findOne({
-                userId
-            }, (err, userDoc) => {
-                if (err) {
-                    // TODO 查询用户失败
-                } else {
-                    let userAddress = {},
-                        goodsList = [];
-                    let addressList = userDoc.addressList,
-                        cartList = userDoc.cartList;
-                    // 地址信息
-                    addressList.forEach(item => {
-                        if (item.addressId == addressId) {
-                            userAddress = item
-                        }
-                    })
-                    // 生成订单号
-                    let platform = '618';
-                    let r1 = Math.floor(Math.random() * 10);
-                    let r2 = Math.floor(Math.random() * 10);
-                    let sysDate = new Date().Format('yyyyMMddhhmmss');
-                    let createDate = new Date().Format('yyyy-MM-dd hh:mm:ss');
-                    let orderId = platform + r1 + sysDate + r2;
-                    let order = {
-                        orderId: orderId,
-                        orderTotal: orderTotal,
-                        addressInfo: userAddress,
-                        goodsList: goodsList,
-                        orderStatus: '0',
-                        createDate: createDate
-                    }
+        orderId = req.query.orderId; 
 
-                    if (productId && productNum) {
-                        Good.findOne({productId}, (goodsErr, goodsDoc) => {
-                            if (goodsErr) {
-                                // TODO 没有这个商品，返回错误页面
-                            } else {
-                                let item = {
-                                    productId: goodsDoc.productId,
-                                    productImg: goodsDoc.productImageBig,
-                                    productName: goodsDoc.productName,
-                                    checked: '1',
-                                    productNum,
-                                    productPrice: goodsDoc.salePrice
-                                }
-                                goodsList.push(item)
-                                // 1为正在支付，需要接受支付宝回调，会改成2，表示成功支付，为3代表支付失败
-                                order.orderStatus = '1'
-                                userDoc.orderList.push(order);
-                                userDoc.save(function (err1, doc1) {
-                                    if (err1) {
-                                        // TODO 订单保存失败
-                                    } else { 
-                                        // TODO 订单保存成功
-                                    }
-                                });
-
-                                let params = ali.pagePay({
-                                    subject: goodsDoc.productName,
-                                    body: goodsDoc.productName,
-                                    outTradeId: orderId,
-                                    timeout: '1c',
-                                    amount: orderTotal,
-                                    goodsType: '1',
-                                    // goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
-                                    passbackParams: JSON.stringify({
-                                        userId
-                                    }),
-                                    // extendParams: {},
-                                    qrPayMode: 1,
-                                    return_url: `http://39.107.236.248/#/order/paysuccess?price=${orderTotal}&orderId=${orderId}`
-                                });
-        
-                                res.redirect('https://openapi.alipaydev.com/gateway.do?' + params)
-                            }
-                        })
-                    } else {
-                        // 获取用户购物车的购买商品
-                        let newCartList = []
-                        cartList.forEach((item) => {
-                            if (item.checked == '1') {
-                                goodsList.push(item);
-                            } else {
-                                newCartList.push(item)
-                            }
-                        });
-                        // 同步数据库
-                        userDoc.cartList = newCartList;
-                        order.orderStatus = '1'
-                        userDoc.orderList.push(order);
-                        userDoc.save(function (err1, doc1) {
-                            if (err1) {
-                                // TODO 订单保存失败
-                            } else { 
-                                // TODO 订单保存成功
-                            }
-                        });
-                        // 生成订单号
-                        let params = ali.pagePay({
-                            subject: '订单' + orderId,
-                            body: goodsList.map(item => item.productName).join(','),
-                            outTradeId: orderId,
-                            timeout: '1c',
-                            amount: orderTotal,
-                            goodsType: '1',
-                            // goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
-                            passbackParams: JSON.stringify({
-                                userId
-                            }),
-                            // extendParams: {},
-                            qrPayMode: 1,
-                            return_url: `http://39.107.236.248/#/order/paysuccess?price=${orderTotal}&orderId=${orderId}`
-                        });
-
-                        res.redirect('https://openapi.alipaydev.com/gateway.do?' + params)
-                    }
+        User.findOne({
+            userId
+        }).then(userDoc => {
+            let orderList = userDoc.orderList,
+                currentOrder;
+            orderList.forEach(order => {
+                if (order.orderId === orderId) {
+                    currentOrder = order;
                 }
             })
-        } else {
-            // TODO 缺少必填字段
-        }
-    } else {
-        // TODO 用户未登录
-    }
+            if (!currentOrder) {
+                // 重定向到订单错误页
+                res.redirect('https://www.baidu.com')
+            } else {
+                let params = ali.pagePay({
+                    subject: `订单${orderId}`,
+                    body: currentOrder.goodsList.map(item => item.productName).join(','),
+                    outTradeId: orderId,
+                    timeout: '1c',
+                    amount: currentOrder.orderTotal,
+                    goodsType: '1',
+                    // goodsDetail: JSON.parse(JSON.stringify(goodsList.map(item => item.productId))),
+                    passbackParams: JSON.stringify({
+                        userId
+                    }),
+                    // extendParams: {},
+                    qrPayMode: 1,
+                    return_url: `http://39.107.236.248/#/order/paysuccess?price=${currentOrder.orderTotal}&orderId=${orderId}`
+                });
+
+                res.redirect('https://openapi.alipaydev.com/gateway.do?' + params)
+            }
+        }).catch(err => {
+            // 重定向到订单错误页
+            res.redirect('https://www.baidu.com')
+        })
 })
+
 // TODO 接受阿里的回调
 router.post('/aliNotice', (req, res) => {    
     let passback_params = JSON.parse(req.body.passback_params);
@@ -998,4 +907,39 @@ router.post('/createOrder', (req, res, err) => {
         })
     })
 })
+
+router.post('/queryOrderById', (req, res, err) => {
+    let userId = req.cookies.userId,
+        orderId = req.body.orderId;
+    
+    User.findOne({
+        userId
+    }).then(userDoc => {
+        let orderList = userDoc.orderList,
+            currentOrder;
+
+        orderList.forEach(order => {
+            if (order.orderId === orderId) {
+                currentOrder = order
+            }
+        })
+
+        res.json(currentOrder ? {
+            status: 0,
+            message: 'suc',
+            result: currentOrder
+        } : {
+            status: 1,
+            message: 'fail',
+            result: ''
+        })
+    }).catch(err => {
+        res.json({
+            status: 1,
+            message: 'failed',
+            result: ''
+        })
+    })
+})
+
 module.exports = router
