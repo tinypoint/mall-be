@@ -614,7 +614,7 @@ router.post('/aliNotice', (req, res) => {
                     userDoc.orderList = userDoc.orderList.map(order => {
                         if (order.orderId == out_trade_no) {
                             return Object.assign({}, order, {
-                                orderStatus: '2'
+                                orderStatus: '1'
                             })
                         } else {
                             return order;
@@ -640,7 +640,7 @@ router.post('/aliNotice', (req, res) => {
                     userDoc.orderList = userDoc.orderList.map(order => {
                         if (order.orderId == out_trade_no) {
                             return Object.assign({}, order, {
-                                orderStatus: '3'
+                                orderStatus: '2'
                             })
                         } else {
                             return order;
