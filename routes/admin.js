@@ -126,6 +126,46 @@ router.post('/updateGood', (req, res, next) => {
             result: ''
         })
     });
+});
+
+router.post('/addGood', (req, res, next) => {
+    let productName = req.body.productName,
+        sub_title = req.body.sub_title,
+        salePrice = req.body.salePrice;
+    
+    let r1 = Math.floor(Math.random() * 10);
+    let r2 = Math.floor(Math.random() * 10);
+    let productId = `1${r1}${(Date.parse(new Date())) / 100}${r2}`.slice(0, 9);
+    Good.insertMany({
+        productId,
+        productName,
+        sub_title,
+        salePrice,
+        limit_num: '5',
+        productImageBig: '',
+        productMsg: {
+            "pieces_num": 0,
+            "piece_height": 0,
+            "height": 0,
+            "width": 0,
+            "url": []
+        },
+        "stock": 10,
+        "productImageSmall": []
+
+    }).then(() => {
+        res.json({
+            status: 0,
+            message: 'suc',
+            result: ''
+        })
+    }).catch(err => {
+        res.json({
+            status: 1,
+            message: 'failed',
+            result: ''
+        })
+    })
 })
 
 module.exports = router
