@@ -104,7 +104,7 @@ router.post('/register', function (req, res) {
                     avatar: 'http://osc9sqdxe.bkt.clouddn.com/default-user-avatar.png',
                     userId: userId,
                     userPwd: userPwd,
-                    role: 2,
+                    role: 4,
                     orderList: [],
                     cartList: [],
                     addressList: []
