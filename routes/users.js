@@ -104,6 +104,7 @@ router.post('/register', function (req, res) {
                     avatar: 'http://osc9sqdxe.bkt.clouddn.com/default-user-avatar.png',
                     userId: userId,
                     userPwd: userPwd,
+                    role: 2,
                     orderList: [],
                     cartList: [],
                     addressList: []
@@ -205,7 +206,8 @@ router.post('/userInfo', function (req, res) {
                         msg: 'suc',
                         result: {
                             name: doc.name,
-                            avatar: doc.avatar
+                            avatar: doc.avatar,
+                            role: doc.role
                         }
                     })
                 } else {
@@ -485,7 +487,7 @@ router.post('/addressAdd', function (req, res) {
                     })
                 }
                 addressList.push({
-                    "addressId": parseInt(Date.parse(new Date())),
+                    addressId: parseInt(Date.parse(new Date())),
                     userName,
                     tel,
                     streetName,
