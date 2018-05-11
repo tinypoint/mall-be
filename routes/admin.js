@@ -166,6 +166,35 @@ router.post('/addGood', (req, res, next) => {
             result: ''
         })
     })
+});
+
+router.post('/deleteProd', (req, res, next) => {
+    let productId = req.body.productId,
+        userId = req.cookies.userId;
+
+    User.findOne({
+        userId
+    }).then(userDoc => {
+        if (userDoc.role === 0 || userDoc.role === 3) {
+            Good.findOneAndRemove({
+                productId
+            }).then(() => {
+              res.json({
+                  status: 0,
+                  message: 'suc'
+              })  
+            })
+        } else {
+            throw Error('权限不足')
+        }
+    }).catch(err => {
+        res.json({
+            status: 1,
+            message: 'failed'
+        })
+    })
+
+
 })
 
 module.exports = router
