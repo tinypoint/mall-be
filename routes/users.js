@@ -944,4 +944,26 @@ router.post('/queryOrderById', (req, res, err) => {
     })
 })
 
+router.post('/changeName', (req, res, next) => {
+    let userId = req.cookies.userId,
+        newName = req.body.newName;
+    
+    User.findOne({
+        userId
+    }).then(userDoc => {
+        userDoc.name = newName;
+        return userDoc.save()
+    }).then(() => {
+        res.json({
+            status: 0,
+            message: 'suc'
+        })
+    }).catch(() => {
+        res.json({
+            status: 1,
+            message: 'failed'
+        })
+    })
+})
+
 module.exports = router
