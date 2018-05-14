@@ -3,6 +3,8 @@ const router = express.Router()
 const mongoose = require('mongoose')
 const Good = require('../models/goods')
 const User = require('../models/user')
+const Hot = require('../models/hots')
+const Recommend = require('../models/recommend')
 const superagent = require('superagent')
 
 // 商品列表
@@ -362,82 +364,165 @@ router.post('/addCart1', function (req, res) {
 
 let czUrl = 'http://www.smartisan.com/product/home'
 
-// 转发锤子接口
-router.get('/productHome', function (req, res) {
-    superagent.get(czUrl).end(function (err, res1) {
-        if (err) {
-            res.json({
-                status: '1',
-                msg: err.message,
-                result: ''
-            })
-        } else {
-            let result = JSON.parse(res1.text)
-            let home_hot = result.data.home_hot || ['100031816', '100032201', '100025104', '100023501'];
-            let home_floors = result.data.home_floors
-            let pId = [], // 保存总商品id
-                hotId = [], // 热门id
-                floorsId = [],// 官方精选 品牌精选
-                floorsList = [];
-            home_hot.forEach(item => {
-                hotId.push(item.spu_id + '01')
-                pId.push(item.spu_id + '01')
-            })
-            home_floors.forEach((item, i) => {
-                let tab_items = item.tabs[0].tab_items // 
-                floorsId[i] = []
-                floorsList[i] = {};
-                floorsList[i].tabs = [];
-                floorsList[i].image = home_floors[i].tabs[0].tab_items[0]
-                floorsList[i].title = home_floors[i].title
-                tab_items.forEach(tab => {
-                    let id = tab.spu_id
-                    if (id) {
-                        floorsId[i].push(id + '01') // 存储id
-                        pId.push(id + '01')
-                    }
-                })
-            })
-            Good.find({productId: {$in: pId}}, (goodsErr, goodsDoc) => {
-                if (goodsErr) {
-                    res.json({
-                        status: '1',
-                        msg: goodsErr.message,
-                        result: ''
-                    })
-                } else {
-                    let hotList = [];
-                    goodsDoc.forEach(item => {
-                        let itemId = item.productId;
-                        hotId.forEach(id => {
-                            if (itemId === id) {
-                                hotList.push(item)
-                            }
-                        })
-                        floorsId.forEach((fitem, i) => {
-                            fitem.forEach(fid => {
-                                if (itemId === fid) {
-                                    floorsList[i].tabs.push(item)
-                                }
-                            })
-                        })
-                    })
+router.get('/configHot', function (req, res) {
+    // oper in ['del', 'add']
+    let oper = req.body.oper,
+        ids = unique(req.body.ids);
 
-
-                    res.json({
-                        status: '0',
-                        msg: 'suc',
-                        result: {
-                            "home_hot": hotList,
-                            'home_floors': floorsList
-                        }
-                    })
+        function unique (arr) {
+            res = [];
+            arr.forEach(o => {
+                if (res.indexOf(o) === -1) {
+                    res.push(o)
                 }
             })
-
-
         }
-    })
+
+    switch (oper) {
+        case 'del': 
+            Hot.remove({
+                productId: {
+                    $in: ids
+                }
+            }).then(() => {
+                res.json({
+                    status: 0,
+                    message: 'suc'
+                })
+            });
+            break;
+        case 'add':
+            Hot.insertMany(ids.map(id => ({
+                productId: id
+            }))).then(() => {
+                res.json({
+                    status: 0,
+                    message: 'suc'
+                })
+            });
+            break;
+    }
+})
+
+router.get('/productHome', function (req, res) {
+    let hotProductIds;
+
+    let hotp = Hot.find().then(docs => {
+        hotProductIds = docs.map(p => p.productId)
+        return Good.find({
+            productId: {
+                $in: hotProductIds
+            } 
+        })
+    }).then(goods => {
+        return goods;
+    });
+
+    let recp = Recommend.find().then(docs => {
+        let recps = docs.map(doc => {
+            return Good.find({
+                productId: {
+                    $in: doc.tabs
+                }
+            }).then(prods => {
+                return {
+                    image: doc.image,
+                    tabs: prods
+                }
+            }) 
+        })
+
+        return Promise.all(recps)
+    });
+
+    Promise.all([hotp, recp]).then(([h, r]) => {
+        res.json({
+            status: 0,
+            message: 'suc',
+            result: {
+                "home_hot": h,
+                'home_floors': r
+            }
+        });
+    }).catch(err => {
+        res.json({
+            status: 1,
+            message: 'failed'
+        });
+    });
+
+    // 老逻辑，转发锤子接口
+    // superagent.get(czUrl).end(function (err, res1) {
+    //     if (err) {
+    //         res.json({
+    //             status: '1',
+    //             msg: err.message,
+    //             result: ''
+    //         })
+    //     } else {
+    //         let result = JSON.parse(res1.text)
+    //         let home_hot = result.data.home_hot || ['100031816', '100032201', '100025104', '100023501'];
+    //         let home_floors = result.data.home_floors
+    //         let pId = [], // 保存总商品id
+    //             hotId = [], // 热门id
+    //             floorsId = [],// 官方精选 品牌精选
+    //             floorsList = [];
+    //         home_hot.forEach(item => {
+    //             hotId.push(item.spu_id + '01')
+    //             pId.push(item.spu_id + '01')
+    //         })
+    //         home_floors.forEach((item, i) => {
+    //             let tab_items = item.tabs[0].tab_items // 
+    //             floorsId[i] = []
+    //             floorsList[i] = {};
+    //             floorsList[i].tabs = [];
+    //             floorsList[i].image = home_floors[i].tabs[0].tab_items[0]
+    //             floorsList[i].title = home_floors[i].title
+    //             tab_items.forEach(tab => {
+    //                 let id = tab.spu_id
+    //                 if (id) {
+    //                     floorsId[i].push(id + '01') // 存储id
+    //                     pId.push(id + '01')
+    //                 }
+    //             })
+    //         })
+    //         Good.find({productId: {$in: pId}}, (goodsErr, goodsDoc) => {
+    //             if (goodsErr) {
+    //                 res.json({
+    //                     status: '1',
+    //                     msg: goodsErr.message,
+    //                     result: ''
+    //                 })
+    //             } else {
+    //                 let hotList = [];
+    //                 goodsDoc.forEach(item => {
+    //                     let itemId = item.productId;
+    //                     hotId.forEach(id => {
+    //                         if (itemId === id) {
+    //                             hotList.push(item)
+    //                         }
+    //                     })
+    //                     floorsId.forEach((fitem, i) => {
+    //                         fitem.forEach(fid => {
+    //                             if (itemId === fid) {
+    //                                 floorsList[i].tabs.push(item)
+    //                             }
+    //                         })
+    //                     })
+    //                 })
+
+    //                 res.json({
+    //                     status: '0',
+    //                     msg: 'suc',
+    //                     result: {
+    //                         "home_hot": hotList,
+    //                         'home_floors': floorsList
+    //                     }
+    //                 })
+    //             }
+    //         })
+    //     }
+    // })
 })
 
 // 商品信息

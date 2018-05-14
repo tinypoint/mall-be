@@ -1,7 +1,10 @@
 var mongoose = require('mongoose')
 // 表模型
 var produtSchema = new mongoose.Schema({
-    'productId': String,
+    'productId': { 
+        type: 'string', 
+        unique: true 
+    },
     'salePrice': Number,
     'productName': String,
     'productImageSmall': Array,
