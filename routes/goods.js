@@ -364,18 +364,18 @@ router.post('/addCart1', function (req, res) {
 
 let czUrl = 'http://www.smartisan.com/product/home'
 
-router.get('/configHot', function (req, res) {
+router.post('/configHot', function (req, res) {
     // oper in ['del', 'add']
     let oper = req.body.oper,
-        ids = unique(req.body.ids);
-
+        ids = unique(req.body.ids.split(','));
         function unique (arr) {
-            res = [];
+            let res1 = [];
             arr.forEach(o => {
-                if (res.indexOf(o) === -1) {
-                    res.push(o)
+                if (res1.indexOf(o) === -1) {
+                    res1.push(o)
                 }
             })
+            return res1;
         }
 
     switch (oper) {
@@ -398,6 +398,11 @@ router.get('/configHot', function (req, res) {
                 res.json({
                     status: 0,
                     message: 'suc'
+                })
+            }).catch(() => {
+                res.json({
+                    status: 1,
+                    message: 'failed'
                 })
             });
             break;
