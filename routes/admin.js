@@ -103,14 +103,15 @@ router.post('/updateGood', (req, res, next) => {
     let productId = req.body.productId,
         productName = req.body.productName,
         sub_title = req.body.sub_title,
-        salePrice = req.body.salePrice;
-        
+        salePrice = req.body.salePrice,
+        productImageBig = req.body.productImageBig;
     Good.findOne({
         productId
     }).then(goodDoc => {
         goodDoc.salePrice = salePrice;
         goodDoc.productName = productName;
         goodDoc.sub_title = sub_title;
+        goodDoc.productImageBig = productImageBig;
 
         return goodDoc.save();
     }).then(() => {
@@ -131,7 +132,8 @@ router.post('/updateGood', (req, res, next) => {
 router.post('/addGood', (req, res, next) => {
     let productName = req.body.productName,
         sub_title = req.body.sub_title,
-        salePrice = req.body.salePrice;
+        salePrice = req.body.salePrice,
+        productImageBig = req.body.productImageBig;
     
     let r1 = Math.floor(Math.random() * 10);
     let r2 = Math.floor(Math.random() * 10);
@@ -141,8 +143,8 @@ router.post('/addGood', (req, res, next) => {
         productName,
         sub_title,
         salePrice,
+        productImageBig,
         limit_num: '5',
-        productImageBig: '',
         productMsg: {
             "pieces_num": 0,
             "piece_height": 0,
