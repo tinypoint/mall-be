@@ -431,6 +431,7 @@ router.get('/productHome', function (req, res) {
                 }
             }).then(prods => {
                 return {
+                    title: doc.title,
                     image: doc.image,
                     tabs: prods
                 }
@@ -515,6 +516,18 @@ router.get('/productHome', function (req, res) {
     //                         })
     //                     })
     //                 })
+
+    // Recommend.insertMany(floorsList.map(item => {
+    //     return {
+    //         title: item.title,
+    //         image: item.image,
+    //         tabs: item.tabs.map(p => {
+    //             return p.productId
+    //         }),
+    //     }
+    // })).then(() => {
+    //     console.log('suc')
+    // })
 
     //                 res.json({
     //                     status: '0',
